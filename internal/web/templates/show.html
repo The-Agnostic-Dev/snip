@@ -1,0 +1,55 @@
+{{define "content"}}
+<div class="page-header">
+  <div>
+    <h1>/{{.Link.Alias}}</h1>
+    <p class="muted">Created {{datetime .Link.CreatedAt}}</p>
+  </div>
+  <div class="actions">
+    <a class="button" href="/links/{{.Link.ID}}/edit">Edit</a>
+    <form method="post" action="/links/{{.Link.ID}}/reset" data-confirm="Reset all statistics for /{{.Link.Alias}}?">
+      <button class="button" type="submit">Reset stats</button>
+    </form>
+    <form method="post" action="/links/{{.Link.ID}}/delete" data-confirm="Delete /{{.Link.Alias}}? Anyone using it will get a 'not found' page.">
+      <button class="button danger" type="submit">Delete</button>
+    </form>
+  </div>
+</div>
+
+<section class="card details">
+  <dl>
+    <dt>Short link</dt>
+    <dd><code>{{shortURL .Link.Alias}}</code> <button type="button" class="copy" data-copy="{{shortURL .Link.Alias}}">Copy</button></dd>
+    <dt>Destination</dt>
+    <dd><a href="{{.Link.Target}}" rel="noopener noreferrer" target="_blank">{{.Link.Target}}</a></dd>
+    <dt>Expires</dt>
+    <dd>{{if .Link.ExpiresOn}}{{day .Link.ExpiresOn}}{{else}}Never{{end}}
+      {{if .Expired}}<span class="badge badge-bad">Expired</span>{{else}}<span class="badge badge-good">Active</span>{{end}}</dd>
+  </dl>
+</section>
+
+<div class="stats">
+  <section class="card stat">
+    <h2>Total clicks</h2>
+    <p class="stat-value" data-testid="total-clicks">{{.Totals.Clicks}}</p>
+  </section>
+  <section class="card stat">
+    <h2>Last click</h2>
+    <p class="stat-value small">{{if .Totals.LastClick.IsZero}}No clicks yet{{else}}{{datetime .Totals.LastClick}}{{end}}</p>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Clicks per day (last 14 days)</h2>
+  <table class="table daily">
+    <tbody>
+      {{range .Daily}}
+      <tr data-day="{{.Day}}">
+        <th scope="row">{{day .Day}}</th>
+        <td class="num daily-count">{{.Clicks}}</td>
+        <td class="bar-cell"><div class="bar" style="width: {{.Percent}}%"></div></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}

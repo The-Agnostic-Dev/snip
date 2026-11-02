@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · Snip</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">✂</span> Snip</a>
+    <nav>
+      <a href="/">Links</a>
+      <a class="button primary" href="/links/new">New link</a>
+    </nav>
+  </header>
+  <main class="content">
+    {{with .Flash}}<div class="flash flash-{{.Kind}}" role="status">{{.Message}}</div>{{end}}
+    {{template "content" .}}
+  </main>
+</body>
+</html>

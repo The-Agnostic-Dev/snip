@@ -1,0 +1,12 @@
+services:
+  snip:
+    build: .
+    ports:
+      - "5110:5110"
+    environment:
+      PORT: "5110"
+      SNIP_BASE_URL: "http://localhost:5110"
+      SNIP_TIMEZONE: "Africa/Lagos"
+      # Use a file to keep links between restarts (and mount a volume at /data):
+      # SNIP_DB: /data/snip.db
+    restart: unless-stopped

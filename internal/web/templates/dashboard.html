@@ -1,0 +1,58 @@
+{{define "content"}}
+<div class="page-header">
+  <h1>Your links</h1>
+  <form class="search" method="get" action="/">
+    <input type="search" name="q" value="{{.Query}}" placeholder="Search by alias or destination" aria-label="Search links">
+    <button class="button" type="submit">Search</button>
+    {{if .Query}}<a href="/">Clear</a>{{end}}
+  </form>
+</div>
+
+{{if .Links}}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Short link</th>
+      <th>Destination</th>
+      <th class="num">Clicks</th>
+      <th>Expires</th>
+      <th>Created</th>
+      <th>Status</th>
+      <th><span class="sr-only">Actions</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Links}}
+    <tr data-alias="{{.Alias}}">
+      <td>
+        <a href="/links/{{.ID}}" class="alias">/{{.Alias}}</a>
+        <button type="button" class="copy" data-copy="{{.Target}}">Copy</button>
+      </td>
+      <td class="target"><a href="{{.Target}}" title="{{.Target}}" rel="noopener noreferrer" target="_blank">{{host .Target}}</a></td>
+      <td class="num clicks">{{.ClickCount}}</td>
+      <td class="created">{{date .CreatedAt}}</td>
+      <td class="expires">{{if .ExpiresOn}}{{day .ExpiresOn}}{{else}}<span class="muted">Never</span>{{end}}</td>
+      <td>{{if .Expired}}<span class="badge badge-bad">Expired</span>{{else}}<span class="badge badge-good">Active</span>{{end}}</td>
+      <td class="actions">
+        <a href="/links/{{.ID}}">Stats</a>
+        <a href="/links/{{.ID}}/edit">Edit</a>
+        <form method="post" action="/links/{{.ID}}/delete" data-confirm="Delete /{{.Alias}}? Anyone using it will get a 'not found' page.">
+          <button type="submit" class="link-button danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+
+<nav class="pagination" aria-label="Pagination">
+  <span class="muted">Showing {{.First}} to {{.Last}} of {{.Total}}</span>
+  {{if .HasPrev}}<a class="button" href="/?page={{.PrevPage}}">Previous</a>{{end}}
+  {{if .HasNext}}<a class="button" href="/?page={{.NextPage}}">Next</a>{{end}}
+</nav>
+{{else if .Query}}
+<p class="empty">No links match “{{.Query}}”.</p>
+{{else}}
+<p class="empty">You have no short links yet. <a href="/links/new">Create your first one</a>.</p>
+{{end}}
+{{end}}

@@ -1,0 +1,9 @@
+/snip
+/bin/
+*.db
+*.db-shm
+*.db-wal
+*.test
+*.out
+.env
+.DS_Store

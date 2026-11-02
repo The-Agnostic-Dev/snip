@@ -1,0 +1,43 @@
+{{define "content"}}
+<div class="page-header">
+  <h1>{{.Title}}</h1>
+</div>
+
+<form class="card form" method="post" action="{{with .Link}}/links/{{.ID}}{{else}}/links{{end}}" novalidate>
+  <label class="field">
+    <span>Destination URL</span>
+    <input name="target" inputmode="url" autocomplete="url" placeholder="https://example.com/long/page" value="{{.Form.Target}}" required autofocus>
+    {{with .Errors.target}}<small class="error">{{.}}</small>{{end}}
+  </label>
+
+  {{if .Link}}
+  <div class="field">
+    <span>Short link</span>
+    <code>{{shortURL .Link.Alias}}</code>
+    <small class="muted">The alias cannot be changed after the link is created.</small>
+  </div>
+  {{else}}
+  <label class="field">
+    <span>Custom alias (optional)</span>
+    <div class="prefixed">
+      <span class="prefix">{{.BaseURL}}/</span>
+      <input name="alias" value="{{.Form.Alias}}" maxlength="40" placeholder="summer-sale">
+    </div>
+    <small class="muted">Letters, numbers and dashes, 3 to 40 characters. Leave empty for a random alias.</small>
+    {{with .Errors.alias}}<small class="error">{{.}}</small>{{end}}
+  </label>
+  {{end}}
+
+  <label class="field">
+    <span>Expires on (optional)</span>
+    <input type="date" name="expires_on" value="{{.Form.ExpiresOn}}" min="{{.Today}}">
+    <small class="muted">The link keeps working until the end of this day.</small>
+    {{with .Errors.expires_on}}<small class="error">{{.}}</small>{{end}}
+  </label>
+
+  <div class="actions">
+    <a class="button" href="{{with .Link}}/links/{{.ID}}{{else}}/{{end}}">Cancel</a>
+    <button class="button primary" type="submit">{{if .Link}}Save changes{{else}}Create short link{{end}}</button>
+  </div>
+</form>
+{{end}}
