@@ -1,0 +1,38 @@
+# Added by TAD (The Agnostic Dev). Checks TAD's pull requests before
+# TAD reviews them: build and tests.
+# Runs only on TAD's branches (tad/...). Optional: add a repository secret
+# TAD_QA_ENV with the .env lines this app needs to build and start.
+name: TAD QA
+on:
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: tad-qa-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+jobs:
+  qa:
+    name: TAD QA
+    if: startsWith(github.head_ref, 'tad/') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - name: App settings
+        env:
+          TAD_QA_ENV: ${{ secrets.TAD_QA_ENV }}
+        run: if [ -n "$TAD_QA_ENV" ]; then printf '%s\n' "$TAD_QA_ENV" >> .env; fi
+      - name: Build
+        run: |
+          go build ./...
+          go vet ./...
+      - name: Test (affected first)
+        run: |
+          FILES=$(git diff --name-only --diff-filter=ACMR HEAD^1 HEAD -- '*.go' | tr '\n' ' ')
+          PKGS=$(for f in $FILES; do echo "./$(dirname "$f")"; done | sort -u | tr '\n' ' ')
+          if [ -n "$PKGS" ]; then go test $PKGS; fi
+      - name: Test
+        run: |
+          go test ./...
