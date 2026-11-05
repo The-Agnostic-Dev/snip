@@ -79,6 +79,22 @@ func TestDashboardCreatedAndExpiresColumns(t *testing.T) {
 	srv := newTestServer(t)
 	_, body := get(t, srv.URL+"/")
 
+	stripTags := func(s string) string {
+		var b strings.Builder
+		for {
+			i := strings.Index(s, "<")
+			if i < 0 {
+				b.WriteString(s)
+				return b.String()
+			}
+			b.WriteString(s[:i])
+			j := strings.Index(s[i:], ">")
+			if j < 0 {
+				return b.String()
+			}
+			s = s[i+j+1:]
+		}
+	}
 	row := func(alias string) string {
 		t.Helper()
 		i := strings.Index(body, `data-alias="`+alias+`"`)
@@ -99,11 +115,80 @@ func TestDashboardCreatedAndExpiresColumns(t *testing.T) {
 		}
 		rest := row[i:]
 		start := strings.Index(rest, ">") + 1
-		end := start + strings.Index(rest[start:], "<")
-		return strings.TrimSpace(rest[start:end])
+		end := start + strings.Index(rest[start:], "</td>")
+		return strings.TrimSpace(stripTags(rest[start:end]))
+	}
+	headers := func() []string {
+		t.Helper()
+		i := strings.Index(body, "<thead>")
+		j := strings.Index(body, "</thead>")
+		if i < 0 || j < i {
+			t.Fatal("no thead in dashboard body")
+		}
+		var cols []string
+		rest := body[i:j]
+		for {
+			k := strings.Index(rest, "<th")
+			if k < 0 {
+				return cols
+			}
+			rest = rest[k:]
+			start := strings.Index(rest, ">") + 1
+			end := start + strings.Index(rest[start:], "</th>")
+			cols = append(cols, strings.TrimSpace(stripTags(rest[start:end])))
+			rest = rest[end:]
+		}
+	}
+	cellClasses := func(row string) []string {
+		var classes []string
+		rest := row
+		for {
+			i := strings.Index(rest, "<td")
+			if i < 0 {
+				return classes
+			}
+			rest = rest[i+len("<td"):]
+			end := strings.Index(rest, ">")
+			tag := rest[:end]
+			cls := ""
+			if k := strings.Index(tag, `class="`); k >= 0 {
+				cls = tag[k+len(`class="`):]
+				cls = cls[:strings.Index(cls, `"`)]
+			}
+			classes = append(classes, cls)
+			rest = rest[end:]
+		}
+	}
+	index := func(list []string, want string) int {
+		t.Helper()
+		for i, v := range list {
+			if v == want {
+				return i
+			}
+		}
+		t.Fatalf("no %q header in %v", want, list)
+		return -1
+	}
+
+	cols := headers()
+	expiresCol := index(cols, "Expires")
+	createdCol := index(cols, "Created")
+	checkColumns := func(alias, row string) {
+		t.Helper()
+		classes := cellClasses(row)
+		if len(classes) != len(cols) {
+			t.Fatalf("row %s has %d cells, want %d", alias, len(classes), len(cols))
+		}
+		if classes[expiresCol] != "expires" {
+			t.Errorf("row %s: cell under the Expires header has class %q, want \"expires\"", alias, classes[expiresCol])
+		}
+		if classes[createdCol] != "created" {
+			t.Errorf("row %s: cell under the Created header has class %q, want \"created\"", alias, classes[createdCol])
+		}
 	}
 
 	flash := row("flash-deal") // expires in 2 days
+	checkColumns("flash-deal", flash)
 	if got := cell(flash, "expires"); got == "" || got == "Never" {
 		t.Errorf("flash-deal expires cell = %q, want the expiry date", got)
 	}
@@ -112,6 +197,7 @@ func TestDashboardCreatedAndExpiresColumns(t *testing.T) {
 	}
 
 	news := row("newsletter") // never expires
+	checkColumns("newsletter", news)
 	if got := cell(news, "expires"); got != "Never" {
 		t.Errorf("newsletter expires cell = %q, want Never", got)
 	}
