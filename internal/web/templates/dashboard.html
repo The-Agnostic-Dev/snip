@@ -30,8 +30,8 @@
       </td>
       <td class="target"><a href="{{.Target}}" title="{{.Target}}" rel="noopener noreferrer" target="_blank">{{host .Target}}</a></td>
       <td class="num clicks">{{.ClickCount}}</td>
-      <td class="created">{{date .CreatedAt}}</td>
       <td class="expires">{{if .ExpiresOn}}{{day .ExpiresOn}}{{else}}<span class="muted">Never</span>{{end}}</td>
+      <td class="created">{{date .CreatedAt}}</td>
       <td>{{if .Expired}}<span class="badge badge-bad">Expired</span>{{else}}<span class="badge badge-good">Active</span>{{end}}</td>
       <td class="actions">
         <a href="/links/{{.ID}}">Stats</a>
