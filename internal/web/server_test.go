@@ -75,6 +75,51 @@ func TestDashboardSearch(t *testing.T) {
 	}
 }
 
+func TestDashboardCreatedAndExpiresColumns(t *testing.T) {
+	srv := newTestServer(t)
+	_, body := get(t, srv.URL+"/")
+
+	row := func(alias string) string {
+		t.Helper()
+		i := strings.Index(body, `data-alias="`+alias+`"`)
+		if i < 0 {
+			t.Fatalf("no row for %s", alias)
+		}
+		rest := body[i:]
+		if j := strings.Index(rest[1:], "data-alias="); j >= 0 {
+			rest = rest[:j+1]
+		}
+		return rest
+	}
+	cell := func(row, class string) string {
+		t.Helper()
+		i := strings.Index(row, `class="`+class+`"`)
+		if i < 0 {
+			t.Fatalf("no %s cell in row: %s", class, row)
+		}
+		rest := row[i:]
+		start := strings.Index(rest, ">") + 1
+		end := start + strings.Index(rest[start:], "<")
+		return strings.TrimSpace(rest[start:end])
+	}
+
+	flash := row("flash-deal") // expires in 2 days
+	if got := cell(flash, "expires"); got == "" || got == "Never" {
+		t.Errorf("flash-deal expires cell = %q, want the expiry date", got)
+	}
+	if got := cell(flash, "created"); got == "" || got == "Never" {
+		t.Errorf("flash-deal created cell = %q, want the creation date", got)
+	}
+
+	news := row("newsletter") // never expires
+	if got := cell(news, "expires"); got != "Never" {
+		t.Errorf("newsletter expires cell = %q, want Never", got)
+	}
+	if got := cell(news, "created"); got == "" || got == "Never" {
+		t.Errorf("newsletter created cell = %q, want the creation date", got)
+	}
+}
+
 func TestRedirect(t *testing.T) {
 	srv := newTestServer(t)
 	res, _ := get(t, srv.URL+"/menu")
